@@ -25,7 +25,7 @@ spec:
         - name: jellyfin
           # Pinned: :latest makes a rollback impossible to express. Check
           # hub.docker.com/r/jellyfin/jellyfin for current stable before bumping.
-          image: jellyfin/jellyfin:10.10.7
+          image: jellyfin/jellyfin:12.1
           ports:
             - name: http
               containerPort: 8096

@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: radarr
-          image: lscr.io/linuxserver/radarr:5.14.0
+          image: lscr.io/linuxserver/radarr:6.4.4
           # linuxserver's s6-overlay entrypoint runs as root to chown to
           # PUID/PGID before dropping privileges, so it can't be forced
           # non-root like the jellyfin/navidrome images.
