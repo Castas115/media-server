@@ -20,7 +20,7 @@ spec:
         - matchExpressions:
             - key: kubernetes.io/hostname
               operator: In
-              values: ["pc1"]
+              values: ["pc2"]
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
