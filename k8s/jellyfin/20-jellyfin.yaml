@@ -21,6 +21,46 @@ spec:
         runAsUser: 1000
         runAsGroup: 100
         fsGroup: 100
+      initContainers:
+        - name: patch-web
+          image: jellyfin/jellyfin:12.1
+          command:
+            - sh
+            - -c
+            - |
+              cp -r /jellyfin/jellyfin-web/. /web-out/
+              awk '
+                BEGIN {
+                  while ((getline line < "/sso-js/inject.js") > 0) js = js line "\n"
+                }
+                {
+                  idx = index($0, "</body>")
+                  if (idx > 0) {
+                    print substr($0, 1, idx - 1) "<script>" js "</script>" substr($0, idx)
+                  } else {
+                    print
+                  }
+                }
+              ' /web-out/index.html > /web-out/index.html.new
+              mv /web-out/index.html.new /web-out/index.html
+          volumeMounts:
+            - { name: web-patched, mountPath: /web-out }
+            - { name: sso-login-button, mountPath: /sso-js }
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 100
+        - name: ca-bundle
+          image: jellyfin/jellyfin:12.1
+          command:
+            - sh
+            - -c
+            - cat /etc/ssl/certs/ca-certificates.crt /ca-in/ca.crt > /ca-out/ca-certificates.crt
+          volumeMounts:
+            - { name: home-ca-cert, mountPath: /ca-in }
+            - { name: ca-bundle, mountPath: /ca-out }
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 100
       containers:
         - name: jellyfin
           # Pinned: :latest makes a rollback impossible to express. Check
@@ -34,6 +74,8 @@ spec:
             - { name: cache, mountPath: /cache }
             - { name: media, mountPath: /media, readOnly: true }
             - { name: tmp, mountPath: /tmp }
+            - { name: web-patched, mountPath: /jellyfin/jellyfin-web }
+            - { name: ca-bundle, mountPath: /etc/ssl/certs/ca-certificates.crt, subPath: ca-certificates.crt }
           resources:
             requests: { cpu: 500m, memory: 512Mi }
             limits: { memory: 4Gi }
@@ -57,6 +99,16 @@ spec:
         - name: media
           persistentVolumeClaim:
             claimName: jellyfin-media
+        - name: web-patched
+          emptyDir: {}
+        - name: ca-bundle
+          emptyDir: {}
+        - name: home-ca-cert
+          configMap:
+            name: home-ca-cert
+        - name: sso-login-button
+          configMap:
+            name: jellyfin-sso-login-button
         # Transcode scratch space. No need to survive the pod.
         - name: cache
           emptyDir:

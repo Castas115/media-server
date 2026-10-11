@@ -5,6 +5,8 @@ namespace: media
 
 resources:
   - 10-storage.yaml
+  - 15-ca-cert.yaml
+  - 16-sso-login-button.yaml
   - 20-jellyfin.yaml
 
 commonLabels:

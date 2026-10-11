@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jellyfin-sso-login-button
+  namespace: media
+data:
+  inject.js: |
+    (function () {
+      function injectButton(provider) {
+        if (document.getElementById('ssoLoginBtn-' + provider)) return;
+        var container = document.querySelector('.readOnlyContent');
+        if (!container) return;
+        var btn = document.createElement('button');
+        btn.id = 'ssoLoginBtn-' + provider;
+        btn.setAttribute('is', 'emby-button');
+        btn.type = 'button';
+        btn.className = 'raised block emby-button';
+        btn.style.marginTop = '.5em';
+        var span = document.createElement('span');
+        span.textContent = 'Login with ' + provider;
+        btn.appendChild(span);
+        btn.addEventListener('click', function () {
+          window.location.href = '/sso/OID/start/' + encodeURIComponent(provider);
+        });
+        container.insertBefore(btn, container.firstChild);
+      }
+      function tryInject() {
+        var form = document.querySelector('.manualLoginForm');
+        if (!form) return;
+        fetch('/sso/OID/GetNames')
+          .then(function (r) { return r.ok ? r.json() : []; })
+          .then(function (names) { (names || []).forEach(injectButton); })
+          .catch(function () {});
+      }
+      var observer = new MutationObserver(function () { tryInject(); });
+      observer.observe(document.body, { childList: true, subtree: true });
+      tryInject();
+    })();
